@@ -11,18 +11,18 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
     const fullUrl = axios.getUri(config)
     const abortController = new AbortController()
     let timer: ReturnType<typeof setTimeout>
-    if (timeout) {
+    if (timeout && !signal) {
       timer = setTimeout(() => abortController.abort())
     }
 
     const stream = new ReadableStream({
       start(controller) {
-        fetchEventSource(fullUrl, {
+        const request = fetchEventSource(fullUrl, {
+          ...rest,
           headers,
           method,
           body: data,
           signal: (signal ?? abortController.signal) as AbortSignal,
-          ...rest,
           async onopen(res) {
             clearTimeout(timer)
             const statusCode = res.status
@@ -34,7 +34,7 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
                 ...(res.headers as unknown as Map<string, string>),
               ]),
               config,
-              request: null,
+              request,
             }
             if (!res.ok || (validateStatus && !validateStatus(statusCode))) {
               return reject(
@@ -42,7 +42,7 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
                   `Request failed with status code ${statusCode}`,
                   String(statusCode),
                   config,
-                  null,
+                  request,
                   response,
                 ),
               )
