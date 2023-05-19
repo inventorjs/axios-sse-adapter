@@ -4,6 +4,8 @@
 import axios, { AxiosError, type AxiosAdapter, type AxiosResponse } from 'axios'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
+const EventStream = 'text/event-stream'
+
 const sseAdapter: AxiosAdapter = function sseAdapter(config) {
   return new Promise((resolve, reject) => {
     const { data, headers, method, signal, validateStatus, timeout, ...rest } =
@@ -46,6 +48,9 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
                   response,
                 ),
               )
+            }
+            if (res.headers.get('content-type') !== EventStream) {
+              controller.enqueue(res.body)
             }
             resolve(response)
           },
