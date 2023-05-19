@@ -50,6 +50,9 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
             resolve(response)
           },
           onmessage(ev) {
+            if (ev.data === '[DONE]') {
+              return
+            }
             controller.enqueue(ev.data)
           },
           onclose() {
