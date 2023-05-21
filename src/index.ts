@@ -1,8 +1,12 @@
 /**
  * sse 适配器
  */
-import axios, { AxiosError, type AxiosAdapter, type AxiosResponse } from 'axios'
+import axios, { AxiosError, type AxiosAdapter, type AxiosResponse, type AxiosRequestConfig } from 'axios'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
+
+interface ConfigWithRetry extends AxiosRequestConfig {
+  retryInterval?: number
+}
 
 const EventStream = 'text/event-stream'
 
@@ -13,13 +17,13 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
     const fullUrl = axios.getUri(config)
     const abortController = new AbortController()
     let timer: ReturnType<typeof setTimeout>
-    if (timeout && !signal) {
-      timer = setTimeout(() => abortController.abort())
+    if (!signal && Number(timeout) > 0) {
+      timer = setTimeout(() => abortController.abort(), timeout)
     }
 
     const stream = new ReadableStream({
       start(controller) {
-        const request = fetchEventSource(fullUrl, {
+        fetchEventSource(fullUrl, {
           ...rest,
           headers,
           method,
@@ -36,7 +40,7 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
                 ...(res.headers as unknown as Map<string, string>),
               ]),
               config,
-              request,
+              request: null,
             }
             if (!res.ok || (validateStatus && !validateStatus(statusCode))) {
               return reject(
@@ -44,7 +48,7 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
                   `Request failed with status code ${statusCode}`,
                   String(statusCode),
                   config,
-                  request,
+                  null,
                   response,
                 ),
               )
@@ -64,9 +68,17 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
             controller.close()
           },
           onerror(error) {
+            // 触发外部 read error
             controller.error(error)
+            // 重试配置
+            const retryConfig = config as ConfigWithRetry
+            if (retryConfig.retryInterval) {
+              return retryConfig.retryInterval
+            }
+            // 终止重试
+            throw error
           },
-        })
+        }).catch((error) => reject(new AxiosError(error.message, '0', config)));
       },
     })
   })
