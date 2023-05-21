@@ -1,6 +1,6 @@
 {
   "name": "@inventorjs/axios-sse-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "axios sse adapter",
   "repository": "git@github.com:sunkeysun/axios-weapp-adapter.git",
   "author": "sunkeysun <sunkeysun@outlook.com>",
