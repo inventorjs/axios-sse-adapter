@@ -11,6 +11,9 @@
     "dist/"
   ],
   "packageManager": "pnpm@7.13.2",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "build": "rimraf lib && tsc"

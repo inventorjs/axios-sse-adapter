@@ -1,12 +1,8 @@
 /**
  * sse 适配器
  */
-import axios, { AxiosError, type AxiosAdapter, type AxiosResponse, type AxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type AxiosAdapter, type AxiosResponse } from 'axios'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-
-interface ConfigWithRetry extends AxiosRequestConfig {
-  retryInterval?: number
-}
 
 const sseAdapter: AxiosAdapter = function sseAdapter(config) {
   return new Promise((resolve, reject) => {
@@ -66,14 +62,8 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
             controller.close()
           },
           onerror(error) {
-            // 触发外部 read error
             controller.error(error)
-            // 重试配置
-            const retryConfig = config as ConfigWithRetry
-            if ((retryConfig.retryInterval ?? 0) > 0) {
-              return retryConfig.retryInterval
-            }
-            // 终止重试
+            // 避免自动重试
             throw error
           },
         }).catch((error) => reject(new AxiosError(error.message, '0', config)));
