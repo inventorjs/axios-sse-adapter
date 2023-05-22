@@ -70,7 +70,7 @@ const sseAdapter: AxiosAdapter = function sseAdapter(config) {
             controller.error(error)
             // 重试配置
             const retryConfig = config as ConfigWithRetry
-            if (retryConfig.retryInterval) {
+            if ((retryConfig.retryInterval ?? 0) > 0) {
               return retryConfig.retryInterval
             }
             // 终止重试
